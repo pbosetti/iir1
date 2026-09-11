@@ -195,6 +195,22 @@ find_package(iir)
 target_link_libraries(... iir::iir_static)
 ```
 
+If you prefer to consume directly via CMake's `FetchContent` (no install required), add:
+```
+include(FetchContent)
+FetchContent_Declare(iir
+	GIT_REPOSITORY https://github.com/pbosetti/iir1.git
+	GIT_TAG        v1.10.0
+)
+# Optional: opt-in to build the static library before making available
+set(IIR1_BUILD_STATIC OFF CACHE BOOL "Build optional static library" FORCE)
+FetchContent_MakeAvailable(iir)
+# Link the shared target
+target_link_libraries(myexe PRIVATE iir::iir)
+# If you enabled the static build, link the static target instead
+target_link_libraries(myexe PRIVATE iir::iir_static)
+```
+
 ### Generic linker setup
 Link it against the dynamic library
 (Unix/Mac: `-liir`, Windows: `iir.lib`)

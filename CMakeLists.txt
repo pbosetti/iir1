@@ -12,7 +12,8 @@ endif()
 
 option(IIR1_NO_EXCEPTIONS "Disable exception handling" OFF)
 
-option(IIR1_INSTALL_STATIC "Install static library" ON)
+option(IIR1_INSTALL_STATIC "Install static library" OFF)
+option(IIR1_BUILD_STATIC "Build optional static library" OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
   set(IIR1_BUILD_TESTING_DEFAULT ON)
@@ -84,13 +85,15 @@ set_target_properties(iir PROPERTIES
   PUBLIC_HEADER Iir.h
   PRIVATE_HEADER "${LIBINCLUDE}")
 
-install(TARGETS iir EXPORT iir-targets
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-  PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/iir)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  install(TARGETS iir EXPORT iir-targets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/iir)
+endif()
 
 include(JoinPaths)
 
@@ -101,61 +104,65 @@ configure_file(iir.pc.in iir.pc @ONLY)
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/iir.pc"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig/")
 
-add_library(iir_static STATIC ${LIBSRC})
-add_library(iir::iir_static ALIAS iir_static)
+if(IIR1_BUILD_STATIC)
+  add_library(iir_static STATIC ${LIBSRC})
+  add_library(iir::iir_static ALIAS iir_static)
 
-target_compile_features(iir_static PUBLIC cxx_std_11)
+  target_compile_features(iir_static PUBLIC cxx_std_11)
 
-target_include_directories(iir_static
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>      # for Iir.h
-  PRIVATE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/iir>  # everything else
-)
-
-if(IIR1_NO_EXCEPTIONS)
-    target_compile_definitions(iir_static PUBLIC "IIR1_NO_EXCEPTIONS")
-endif()
-
-set_target_properties(iir_static PROPERTIES
-  POSITION_INDEPENDENT_CODE TRUE
-  VERSION ${PROJECT_VERSION}
-  PUBLIC_HEADER Iir.h
-  PRIVATE_HEADER "${LIBINCLUDE}")
-
-if(IIR1_INSTALL_STATIC)
-  install(TARGETS iir_static EXPORT iir-targets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/iir)
-endif()
-
-install(EXPORT iir-targets
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/iir
-  NAMESPACE iir::
-  FILE iirTargets.cmake
-)
-
-include(CMakePackageConfigHelpers)
-
-configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
-  "${CMAKE_CURRENT_BINARY_DIR}/iirConfig.cmake"
-  INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/iir"
-  NO_SET_AND_CHECK_MACRO
-  NO_CHECK_REQUIRED_COMPONENTS_MACRO
+  target_include_directories(iir_static
+    PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>      # for Iir.h
+    PRIVATE
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/iir>  # everything else
   )
 
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/iirConfigVersion.cmake"
-  VERSION "${iir_VERSION_MAJOR}.${iir_VERSION_MINOR}"
-  COMPATIBILITY AnyNewerVersion
-)
+  if(IIR1_NO_EXCEPTIONS)
+      target_compile_definitions(iir_static PUBLIC "IIR1_NO_EXCEPTIONS")
+  endif()
 
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/iirConfig.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/iirConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/iir
+  set_target_properties(iir_static PROPERTIES
+    POSITION_INDEPENDENT_CODE TRUE
+    VERSION ${PROJECT_VERSION}
+    PUBLIC_HEADER Iir.h
+    PRIVATE_HEADER "${LIBINCLUDE}")
+
+  if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND IIR1_INSTALL_STATIC)
+    install(TARGETS iir_static EXPORT iir-targets
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+      PRIVATE_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/iir)
+  endif()
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+  install(EXPORT iir-targets
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/iir
+    NAMESPACE iir::
+    FILE iirTargets.cmake
   )
+
+  include(CMakePackageConfigHelpers)
+
+  configure_package_config_file(${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/iirConfig.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/iir"
+    NO_SET_AND_CHECK_MACRO
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
+    )
+
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/iirConfigVersion.cmake"
+    VERSION "${iir_VERSION_MAJOR}.${iir_VERSION_MINOR}"
+    COMPATIBILITY AnyNewerVersion
+  )
+
+  install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/iirConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/iirConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/iir
+  )
+endif()
